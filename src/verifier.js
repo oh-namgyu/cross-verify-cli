@@ -36,6 +36,9 @@ export function runVerifier(command, prompt, { timeoutMs = 180_000 } = {}) {
         resolve({ ok: true, output: out })
       }
     })
+    // A verifier that exits before draining stdin (e.g. doesn't read it) makes the
+    // write fail with EPIPE; swallow it — the verifier's output is what matters.
+    child.stdin.on('error', () => {})
     child.stdin.end(prompt)
   })
 }
