@@ -14,6 +14,21 @@ test('runVerifier reports nonzero-exit errors', async () => {
   assert.match(res.error, /exited/)
 })
 
+test('runVerifier survives a verifier that ignores a huge stdin (EPIPE)', async () => {
+  // 'true' exits immediately without reading stdin; a prompt larger than the
+  // pipe buffer would crash on EPIPE without the stdin error handler.
+  const res = await runVerifier('true', 'x'.repeat(2 * 1024 * 1024))
+  assert.equal(res.ok, true)
+})
+
+test('runVerifier times out (and resolves) on a long-running verifier', async () => {
+  const start = Date.now()
+  const res = await runVerifier('sleep 5', 'x', { timeoutMs: 150 })
+  assert.equal(res.ok, false)
+  assert.match(res.error, /timed out/)
+  assert.ok(Date.now() - start < 3000, 'should resolve at the timeout, not after sleep')
+})
+
 test('parseVerdict extracts verdict and findings', () => {
   const text = `VERDICT: needs-fixes
 [high] SQL injection in query — use parameterized queries
@@ -27,6 +42,18 @@ test('parseVerdict extracts verdict and findings', () => {
 
 test('parseVerdict tolerates no verdict line', () => {
   assert.equal(parseVerdict('just some text').verdict, null)
+})
+
+test('parseVerdict ignores markdown checkboxes and bracketed prose', () => {
+  const text = `VERDICT: ready-with-notes
+- [x] a done checklist item
+- [ ] a todo checklist item
+see the [config] section for details
+[low] a real finding — fix it`
+  const p = parseVerdict(text)
+  assert.equal(p.findings.length, 1)
+  assert.equal(p.findings[0].severity, 'low')
+  assert.match(p.findings[0].fix, /fix it/)
 })
 
 test('combineVerdict — gate blockers always win', () => {

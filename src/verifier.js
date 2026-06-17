@@ -12,13 +12,15 @@ export function runVerifier(command, prompt, { timeoutMs = 180_000 } = {}) {
   return new Promise((resolve) => {
     let child
     try {
-      child = spawn(command, { shell: true, stdio: ['pipe', 'pipe', 'pipe'] })
+      // detached: own process group, so a timeout can kill the shell AND any
+      // grandchildren the verifier spawned (e.g. an AI CLI's own subprocesses).
+      child = spawn(command, { shell: true, stdio: ['pipe', 'pipe', 'pipe'], detached: true })
     } catch (err) {
       return resolve({ ok: false, error: `spawn failed: ${err.message}`, output: '' })
     }
     let out = '', err = ''
     const timer = setTimeout(() => {
-      child.kill('SIGKILL')
+      try { process.kill(-child.pid, 'SIGKILL') } catch { /* group already gone */ }
       resolve({ ok: false, error: `verifier timed out after ${timeoutMs}ms`, output: out })
     }, timeoutMs)
     timer.unref?.()
@@ -49,7 +51,9 @@ export function parseVerdict(text) {
   const verdict = verdictMatch ? verdictMatch[1].toLowerCase() : null
   const findings = []
   for (const line of text.split('\n')) {
-    const m = line.match(/^\s*[-*]?\s*\[(\w+)\]\s*(.+)/)
+    // Anchor to known severities so markdown checkboxes ("- [x]") and inline
+    // brackets ("[config]") in prose don't get parsed as findings.
+    const m = line.match(/^\s*[-*]?\s*\[(critical|high|medium|low|info|warning)\]\s*(.+)/i)
     if (m) {
       const [, severity, rest] = m
       const [title, ...fixParts] = rest.split('—')

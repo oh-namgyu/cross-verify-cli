@@ -7,6 +7,12 @@
   "bin": {
     "cross-verify": "src/cli.js"
   },
+  "files": [
+    "src",
+    "README.md",
+    "SECURITY.md",
+    "LICENSE"
+  ],
   "scripts": {
     "test": "node --test"
   },
