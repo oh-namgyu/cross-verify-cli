@@ -1,5 +1,10 @@
 # cross-verify-cli
 
+[![CI](https://github.com/oh-namgyu/cross-verify-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/oh-namgyu/cross-verify-cli/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/oh-namgyu/cross-verify-cli)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/oh-namgyu/cross-verify-cli)](https://github.com/oh-namgyu/cross-verify-cli/releases)
+
+
 Pre-publish verification where **the model that wrote the code is never the one that approves it.**
 
 `cross-verify` runs two layers over a repo or a diff:
