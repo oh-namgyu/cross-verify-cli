@@ -33,6 +33,6 @@
     "open-source-release"
   ],
   "dependencies": {
-    "commander": "^13.0.0"
+    "commander": "^15.0.0"
   }
 }
