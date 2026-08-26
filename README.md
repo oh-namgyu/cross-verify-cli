@@ -5,6 +5,8 @@
 [![Release](https://img.shields.io/github/v/release/oh-namgyu/cross-verify-cli)](https://github.com/oh-namgyu/cross-verify-cli/releases)
 
 
+> **한글 요약** — 코드를 작성한 모델이 스스로 승인하지 못하게 하는 공개 전 검증 도구입니다 — 결정적 시크릿/라이선스 게이트에 더해, 다른 모델이 독립적으로 2차 리뷰합니다.
+
 Pre-publish verification where **the model that wrote the code is never the one that approves it.**
 
 `cross-verify` runs two layers over a repo or a diff:
