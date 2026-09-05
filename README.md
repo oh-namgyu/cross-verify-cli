@@ -1,9 +1,8 @@
 # cross-verify-cli
 
 [![CI](https://github.com/oh-namgyu/cross-verify-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/oh-namgyu/cross-verify-cli/actions/workflows/ci.yml)
-[![License](https://img.shields.io/github/license/oh-namgyu/cross-verify-cli)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/oh-namgyu/cross-verify-cli)](https://github.com/oh-namgyu/cross-verify-cli/releases)
-
 
 > **한글 요약** — 코드를 작성한 모델이 스스로 승인하지 못하게 하는 공개 전 검증 도구입니다 — 결정적 시크릿/라이선스 게이트에 더해, 다른 모델이 독립적으로 2차 리뷰합니다.
 
@@ -91,4 +90,6 @@ cross-verify <path> [options]
 npm test
 ```
 
-MIT — see [LICENSE](LICENSE). Security & trust model: [SECURITY.md](SECURITY.md).
+## License
+
+MIT — see [LICENSE](LICENSE). Security policy: [SECURITY.md](SECURITY.md).
