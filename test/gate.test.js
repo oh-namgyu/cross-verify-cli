@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { runGate } from '../src/gate.js'
+import { rmSync, writeFileSync } from 'node:fs'
 import { makeDirtyRepo } from './helpers.js'
 
 const CLEAN = join(dirname(fileURLToPath(import.meta.url)), '..', 'fixtures', 'clean-repo')
@@ -45,4 +46,18 @@ test('ignore regexes suppress matched files', (t) => {
 test('allowEmail suppresses email findings', () => {
   const suppressed = runGate(CLEAN, { allowEmail: true })
   assert.equal(suppressed.findings.filter((f) => f.label === 'email address').length, 0)
+})
+
+test('.env variants are blocked and scanned; .env.example is allowed', (t) => {
+  const { dir, cleanup } = makeDirtyRepo()
+  t.after(cleanup)
+  rmSync(join(dir, '.env'))
+  writeFileSync(join(dir, 'app.js'), 'export {}\n')
+  writeFileSync(join(dir, 'LICENSE'), 'MIT\n')
+  writeFileSync(join(dir, '.env.example'), 'API_KEY=\n')
+  assert.deepEqual(runGate(dir).blockers, [])
+  writeFileSync(join(dir, '.env.local'), `AWS_KEY=${'AKIA' + 'IOSFODNN7' + 'EXAMPLE'}\n`)
+  const rules = runGate(dir).blockers.map((b) => b.rule)
+  assert.ok(rules.includes('env'), 'tracked .env.local must be a blocker')
+  assert.ok(rules.includes('secret'), 'secrets inside .env.local must be scanned')
 })

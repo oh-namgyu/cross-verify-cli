@@ -5,6 +5,9 @@ const IGNORE_DIRS = new Set(['node_modules', '.git', 'dist', 'build', 'out', 'co
 const TEXT_EXTS = new Set(['.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx', '.py', '.rb', '.go', '.java', '.json',
   '.yml', '.yaml', '.env', '.sh', '.md', '.txt', '.cfg', '.ini', '.toml', ''])
 const MAX_FILE_BYTES = 512 * 1024
+const ENV_TEMPLATES = new Set(['.env.example', '.env.sample', '.env.template'])
+/** `.env` and variants like `.env.local` hold real values; documented templates do not. */
+export const isEnvFile = (name) => (name === '.env' || name.startsWith('.env.')) && !ENV_TEMPLATES.has(name)
 
 // Secret patterns — conservative, high-signal. Each: [label, regex].
 const SECRET_PATTERNS = [
@@ -38,7 +41,7 @@ function walk(root, ignore) {
       if (ignore.some((re) => re.test(rel))) continue
       if (e.isDirectory()) {
         if (!IGNORE_DIRS.has(e.name)) rec(full)
-      } else if (TEXT_EXTS.has(extname(e.name))) {
+      } else if (TEXT_EXTS.has(extname(e.name)) || e.name.startsWith('.env')) {
         try {
           if (statSync(full).size <= MAX_FILE_BYTES) out.push({ rel, full })
         } catch { /* skip */ }
@@ -65,11 +68,12 @@ export function runGate(root, { ignore = [], allowEmail = false } = {}) {
   const rootNames = files.filter((f) => !f.rel.includes('/')).map((f) => f.rel.toLowerCase())
   const hasReadme = rootNames.some((n) => n.startsWith('readme'))
   const hasLicense = rootNames.some((n) => n.startsWith('license') || n.startsWith('licence') || n === 'copying')
-  const envTracked = files.some((f) => basename(f.rel) === '.env')
+  const envFiles = files.filter((f) => isEnvFile(basename(f.rel))).map((f) => f.rel)
+  const envTracked = envFiles.length > 0
 
   if (!hasReadme) blockers.push({ rule: 'readme', message: 'No README found' })
   if (!hasLicense) blockers.push({ rule: 'license', message: 'No LICENSE found' })
-  if (envTracked) blockers.push({ rule: 'env', message: '.env is tracked in the tree' })
+  for (const rel of envFiles) blockers.push({ rule: 'env', message: `${rel} is tracked in the tree` })
 
   for (const f of files) {
     let text

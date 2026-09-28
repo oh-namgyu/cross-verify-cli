@@ -20,7 +20,11 @@ export async function crossVerify(path, opts) {
   let llm = null
   let verifierLabel = opts.verifier || '(none)'
   const sameModel = Boolean(opts.author && opts.verifier && opts.verifier.includes(author))
-  if (opts.verifier) {
+  const secretBlocked = gate.blockers.some((b) => b.rule === 'secret')
+  if (opts.verifier && secretBlocked) {
+    // The verifier may be a remote model: never ship evidence that contains a detected secret.
+    llm = { error: 'skipped — secret blocker; evidence withheld from the verifier', findings: [], verdict: null }
+  } else if (opts.verifier) {
     const evidence = gatherEvidence(root, mode)
     const prompt = buildPrompt(evidence, { mode, gate })
     const res = await runVerifier(opts.verifier, prompt, { timeoutMs: (Number(opts.timeout) || 180) * 1000 })

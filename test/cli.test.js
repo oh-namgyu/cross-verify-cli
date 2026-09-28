@@ -4,6 +4,7 @@ import { execFile } from 'node:child_process'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
+import { existsSync } from 'node:fs'
 import { makeDirtyRepo } from './helpers.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -43,4 +44,14 @@ test('same-model verifier is capped at ready-with-notes', async () => {
   const r = await run([CLEAN, '--author', 'claude', '--verifier', verifier])
   assert.match(r.out, /same model/)
   assert.match(r.out, /Verdict: \*\*ready-with-notes\*\*/)
+})
+
+test('secret blocker → verifier is never called, so evidence cannot leak', async (t) => {
+  const { dir, cleanup } = makeDirtyRepo()
+  t.after(cleanup)
+  const marker = join(dir, 'verifier-was-called')
+  const verifier = `cat > '${marker}'; printf 'VERDICT: public-ready\\n'`
+  const r = await run([dir, '--author', 'claude', '--verifier', verifier])
+  assert.equal(r.code, 2)
+  assert.equal(existsSync(marker), false, 'verifier received the prompt despite a secret blocker')
 })

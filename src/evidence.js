@@ -1,19 +1,33 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { join, relative, extname, basename } from 'node:path'
+import { isEnvFile } from './gate.js'
 
 const IGNORE_DIRS = new Set(['node_modules', '.git', 'dist', 'build', 'out', 'coverage', '.next', '.venv', '__pycache__'])
 const CODE_EXTS = new Set(['.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx', '.py', '.rb', '.go', '.java', '.rs', '.md', '.json'])
 const MAX_BYTES_PER_FILE = 16 * 1024
 const MAX_TOTAL_BYTES = 120 * 1024
 
+function readUntracked(full) {
+  try {
+    if (statSync(full).size > 256 * 1024) return '(skipped: file too large)'
+    return readFileSync(full, 'utf8').slice(0, MAX_BYTES_PER_FILE).replace(/^/gm, '+')
+  } catch {
+    return '(unreadable)'
+  }
+}
+
 /** Collect evidence for the verifier. mode 'change' → git diff; else → file snippets. */
 export function gatherEvidence(root, mode) {
   if (mode === 'change') {
     try {
-      const diff = execFileSync('git', ['-C', root, 'diff', 'HEAD'], { encoding: 'utf8', maxBuffer: 4 * 1024 * 1024 })
-      const staged = execFileSync('git', ['-C', root, 'diff', '--cached'], { encoding: 'utf8', maxBuffer: 4 * 1024 * 1024 })
-      const combined = (staged + diff).slice(0, MAX_TOTAL_BYTES)
+      const git = (...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8', maxBuffer: 4 * 1024 * 1024 })
+      // `diff HEAD` already covers staged + unstaged; new files are invisible to it, so append them.
+      const untracked = git('ls-files', '--others', '--exclude-standard', '-z').split('\0').filter(Boolean)
+      const added = untracked
+        .filter((rel) => !isEnvFile(basename(rel)))
+        .map((rel) => `--- /dev/null\n+++ b/${rel}\n${readUntracked(join(root, rel))}`)
+      const combined = [git('diff', 'HEAD'), ...added].join('\n').slice(0, MAX_TOTAL_BYTES).trim()
       return { kind: 'diff', text: combined || '(no uncommitted changes)' }
     } catch {
       return { kind: 'diff', text: '(git diff unavailable — not a git repo?)' }
