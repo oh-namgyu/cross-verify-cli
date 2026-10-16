@@ -1,6 +1,6 @@
 {
   "name": "cross-verify-cli",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Pre-publish verification CLI: a deterministic gate (secrets, PII, license) plus an independent second-model review (any verifier command) — so the model that wrote the code is never the one that approves it.",
   "type": "module",
   "license": "MIT",
@@ -17,7 +17,7 @@
     "test": "node --test"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.12.0"
   },
   "repository": {
     "type": "git",

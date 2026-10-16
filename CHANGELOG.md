@@ -2,6 +2,13 @@
 
 All notable changes are documented here. Format: [Keep a Changelog](https://keepachangelog.com/), versioning: [SemVer](https://semver.org/).
 
+## [0.2.0] - 2026-10-16
+
+### Changed
+
+- **Node.js 22 is now the minimum** (`engines.node` is `>=22.12.0`). The previous `>=20` was already untrue: `commander` 15 requires `>=22.12.0`, so `npm install` on Node 20 printed `EBADENGINE` warnings. Node 20 reached end-of-life in April 2026.
+- CI tests on Node 22 and 24 (Node 20 dropped).
+
 ## [0.1.1] - 2026-10-16
 
 ### Security
